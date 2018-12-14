@@ -24,10 +24,34 @@
     var padding = 20;
     var fontSize = 40;
     var lineHeight = fontSize*1.3;
+
+    var bgColor = '#fff'
+    var textColor = '#41ABD5'
     
     var downloadLink = $('.save a')[0];
   
     onDynamicText();
+
+    var hueBeeOptions = {
+      setText: false,
+      setBGColor: true,
+      saturations: 2
+    };
+    var huebBg = new Huebee( $('.colorpicker .bgColor')[0], hueBeeOptions);
+    huebBg.setColor(bgColor);
+    huebBg.on('change', color => {
+      bgColor = color;
+      updateTextAreaStyles();
+      reDraw();
+    });
+    var huebText = new Huebee( $('.colorpicker .textColor')[0], hueBeeOptions);
+    huebText.setColor(textColor);
+    huebText.on('change', color => {
+      textColor = color;
+      updateTextAreaStyles();
+      reDraw();
+    });
+
 
     this.$file.on('change', (event) => {
       console.log('file input', event.target.files);
@@ -77,15 +101,27 @@
         height: (CANVAS_WIDTH * img.height) / img.width
       }
     }
+
+    function updateTextAreaStyles() {
+      textarea.css({
+        color: textColor,
+        background: bgColor
+      })
+    }
+
+    function reDraw() {
+      drawImage();
+      drawText(text);
+    }
     
     function drawImage() {
-      context.fillStyle = 'rgb(255, 255, 255)';
+      context.fillStyle = bgColor;
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(img, padding, padding, imageDimensions.width, imageDimensions.height);
     }
     
     function drawText(theText) {
-      context.fillStyle = '#333';
+      context.fillStyle = textColor;
       context.textBaseline = 'middle';
       context.font = fontSize + "px 'Helvetica'";
       

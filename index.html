@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width">
   <title>Текст на картинке</title>
   <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/huebee@1/dist/huebee.min.css">
 </head>
 <body>
   <div class="text2pic">
@@ -23,7 +24,13 @@
       </div>
       <div class="form">
         <label for="text">2. Написать текст</label>
-        <textarea name="text" id="text" rows="4"></textarea>
+        <div class="text">
+          <span class="colorpicker">
+            <span class="bgColor"></span>
+            <span class="textColor"></span>
+          </span>
+          <textarea name="text" id="text" rows="4"></textarea>
+        </div>
       </div>  
     </section>
 
@@ -37,6 +44,7 @@
     </div>
   </div>
   <script src="https://zeptojs.com/zepto.min.js"></script>
+  <script src="https://unpkg.com/huebee@1/dist/huebee.pkgd.min.js"></script>
   <script src="text2pic.js"></script>
 </body>
 </html>
