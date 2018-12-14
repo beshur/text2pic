@@ -5,6 +5,13 @@
 (function() {
   var App = function() {
     var that = this;
+    var localStorageKey = 'text2pic';
+    var data = {
+      text: '',
+      textColor: '#41ABD5',
+      bgColor: '#fff'
+    }
+    retrieveData();
     this.$el = $('.text2pic');
 
     this.$file = this.$el.find('.upload input');
@@ -12,6 +19,8 @@
     var debounceTimer;
     var canvas = this.$el.find('#preview')[0];
     var textarea = this.$el.find('textarea');
+    textarea.val(data.text);
+    updateTextAreaStyles();
     
     var context = canvas.getContext("2d"); 
     var img = new Image();
@@ -20,14 +29,9 @@
       height: 0
     };
     
-    var text = '';
     var padding = 20;
     var fontSize = 40;
     var lineHeight = fontSize*1.3;
-
-    var bgColor = '#fff'
-    var textColor = '#41ABD5'
-    
     var downloadLink = $('.save a')[0];
   
     onDynamicText();
@@ -38,17 +42,19 @@
       saturations: 2
     };
     var huebBg = new Huebee( $('.colorpicker .bgColor')[0], hueBeeOptions);
-    huebBg.setColor(bgColor);
+    huebBg.setColor(data.bgColor);
     huebBg.on('change', color => {
-      bgColor = color;
+      data.bgColor = color;
       updateTextAreaStyles();
+      storeData();
       reDraw();
     });
     var huebText = new Huebee( $('.colorpicker .textColor')[0], hueBeeOptions);
-    huebText.setColor(textColor);
+    huebText.setColor(data.textColor);
     huebText.on('change', color => {
-      textColor = color;
+      data.textColor = color;
       updateTextAreaStyles();
+      storeData();
       reDraw();
     });
 
@@ -90,7 +96,7 @@
       canvas.width = imageDimensions.width + padding*2;
       canvas.height = imageDimensions.height + lineHeight*4 + padding*2;
       drawImage();
-      drawText(text);
+      drawText(data.text);
       window.scrollTo(0, textarea.offset().top);
       textarea.focus();
     }
@@ -104,24 +110,24 @@
 
     function updateTextAreaStyles() {
       textarea.css({
-        color: textColor,
-        background: bgColor
+        color: data.textColor,
+        background: data.bgColor
       })
     }
 
     function reDraw() {
       drawImage();
-      drawText(text);
+      drawText(data.text);
     }
     
     function drawImage() {
-      context.fillStyle = bgColor;
+      context.fillStyle = data.bgColor;
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(img, padding, padding, imageDimensions.width, imageDimensions.height);
     }
     
     function drawText(theText) {
-      context.fillStyle = textColor;
+      context.fillStyle = data.textColor;
       context.textBaseline = 'middle';
       context.font = fontSize + "px 'Helvetica'";
       
@@ -140,23 +146,43 @@
     }
     function onDynamicText() {
       textarea.on('keyup', function(event) {
-        text = $(this).val();
+        data.text = $(this).val();
         debounce(function() {
           drawImage();
-          drawText(text); 
+          drawText(data.text);
+          storeData();
         }, 100);
       });
     }
     
     function wrapText(context, text, x, y, maxWidth, lineHeight) {
-        var words = text.split(' ');
-        var line = '';
-      
-        text.split('\n').forEach(line => {
-          context.fillText(line, x, y);
-          y += lineHeight;
-        });
+      var words = text.split(' ');
+      var line = '';
+    
+      text.split('\n').forEach(line => {
+        context.fillText(line, x, y);
+        y += lineHeight;
+      });
+    }
+
+    function storeData() {
+      try {
+        var result = localStorage.setItem(localStorageKey, JSON.stringify(data));
+      } catch(err) {
+        console.error('Error storing localStorage', err);
       }
+    }
+    function retrieveData() {
+      try {
+        var fromLocalStorage = localStorage.getItem(localStorageKey);
+        if (fromLocalStorage) {
+          data = JSON.parse(fromLocalStorage);
+          console.log('retrieveData', data);
+        }
+      } catch(err) {
+        console.error('Error retrieving localStorage', err);
+      }
+    }
     
     console.log('App ready');
   }
