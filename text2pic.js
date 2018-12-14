@@ -67,6 +67,8 @@
       canvas.height = imageDimensions.height + lineHeight*4 + padding*2;
       drawImage();
       drawText(text);
+      window.scrollTo(0, textarea.offset().top);
+      textarea.focus();
     }
     
     function getImageDimensions(img) {
