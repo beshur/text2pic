@@ -1,21 +1,26 @@
 /*
   text2pic, 2018
   Author: Alex Buznik <shu@buznik.net>
+  Repo URL: https://github.com/beshur/text2pic
 */
 (function() {
   var App = function() {
     var that = this;
-    var localStorageKey = 'text2pic';
+    var CANVAS_WIDTH = 1000;
+    var LOCALSTORAGE_KEY = 'text2pic';
+    var img = new Image();
+    var imageModel = new ImageModel(CANVAS_WIDTH, onImageLoad);
+
     var data = {
       text: '',
       textColor: '#41ABD5',
       bgColor: '#fff'
     }
+    var rotation = 0;
     retrieveData();
     this.$el = $('.text2pic');
 
     this.$file = this.$el.find('.upload input');
-    var CANVAS_WIDTH = 1000;
     var debounceTimer;
     var canvas = this.$el.find('#preview')[0];
     var textarea = this.$el.find('textarea');
@@ -23,7 +28,6 @@
     updateTextAreaStyles();
     
     var context = canvas.getContext("2d"); 
-    var img = new Image();
     var imageDimensions = {
       width: 0,
       height: 0
@@ -58,7 +62,18 @@
       reDraw();
     });
 
+    this.$el.find('.rotate').on('click', (event) => {
+      rotation = rotation + 90;
+      if (rotation >= 360) {
+        rotation = 0;
+      }
+      imageModel.rotate(90);
+      reDraw();
+    });
 
+    $(canvas).on('click', event => {
+      this.$el.find('.upload .button').click();
+    });
     this.$file.on('change', (event) => {
       console.log('file input', event.target.files);
       var files = event.target.files; // FileList object
@@ -72,7 +87,6 @@
           if( loadEvent.target.readyState == FileReader.DONE) {
             console.log('loadEvent', loadEvent.target.result.length);
             img.src = loadEvent.target.result;
-            img.onload = onImageLoad;
           }
         }
       } else {
@@ -91,20 +105,17 @@
       }, wait);
     }
     
-    function onImageLoad() {
-      imageDimensions = getImageDimensions(img);
-      canvas.width = imageDimensions.width + padding*2;
-      canvas.height = imageDimensions.height + lineHeight*4 + padding*2;
-      drawImage();
-      drawText(data.text);
+    function onImageLoad(image) {
+      console.log('onImageLoad');
+      reDraw();
       window.scrollTo(0, textarea.offset().top);
       textarea.focus();
     }
     
-    function getImageDimensions(img) {
+    function getImageDimensions(image) {
       return {
         width: CANVAS_WIDTH,
-        height: (CANVAS_WIDTH * img.height) / img.width
+        height: (CANVAS_WIDTH * image.height) / image.width
       }
     }
 
@@ -116,17 +127,82 @@
     }
 
     function reDraw() {
+      resizeCanvas();
       drawImage();
       drawText(data.text);
     }
-    
-    function drawImage() {
-      context.fillStyle = data.bgColor;
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(img, padding, padding, imageDimensions.width, imageDimensions.height);
+
+    function resizeCanvas()  {
+      var imgSize = imageModel.calcSize();
+      canvas.width = CANVAS_WIDTH + padding*2;
+      canvas.height = imgSize.height + lineHeight*4 + padding*2;
     }
     
+    function drawImage() {
+      var imgSize = imageModel.calcSize();
+      context.fillStyle = data.bgColor;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      context.save();
+
+
+      var args = [
+        imageModel.getPicData(),
+        padding,
+        padding,
+        imgSize.width,
+        imgSize.height
+      ];
+      // console.info('drawImage args before', args);
+      _rotateCanvas(rotation);
+
+      switch(rotation) {
+        case 0:
+          console.log('drawImage, rotation: %s ', rotation);
+          break;
+        case 90:
+          console.log('drawImage, rotation: %s ', rotation);
+
+          context.translate(0, -imgSize.width);
+
+          // x is y
+          args[1] = padding;
+          // y is x
+          args[2] = -padding;
+          // w is new height
+          args[3] = imgSize.height;
+          // h is new width
+          args[4] = imgSize.width;
+
+          break;
+
+        case 180:
+          console.log('drawImage, rotation: %s ', rotation);
+
+          break;
+        case 270:
+          console.log('drawImage, rotation: %s ', rotation);
+
+          break;
+
+        default:
+          console.log('drawImage, rotation: default ');
+          break;
+      }
+
+      console.log('drawImage args after', args);
+      context.drawImage(...args);
+      context.restore();
+    }
+
+    function _rotateCanvas(degrees) {
+      console.log('_rotateCanvas', degrees);
+      context.rotate(Math.PI / 180 * degrees);
+    }
+
+    
     function drawText(theText) {
+      var imgSize = imageModel.calcSize();
       context.fillStyle = data.textColor;
       context.textBaseline = 'middle';
       context.font = fontSize + "px 'Helvetica'";
@@ -135,7 +211,7 @@
         context,
         theText,
         padding,
-        imageDimensions.height + padding*3,
+        imgSize.height + padding*3,
         canvas.width - padding*2,
         lineHeight);
       
@@ -167,14 +243,14 @@
 
     function storeData() {
       try {
-        var result = localStorage.setItem(localStorageKey, JSON.stringify(data));
+        var result = localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
       } catch(err) {
         console.error('Error storing localStorage', err);
       }
     }
     function retrieveData() {
       try {
-        var fromLocalStorage = localStorage.getItem(localStorageKey);
+        var fromLocalStorage = localStorage.getItem(LOCALSTORAGE_KEY);
         if (fromLocalStorage) {
           data = JSON.parse(fromLocalStorage);
           console.log('retrieveData', data);
@@ -183,8 +259,91 @@
         console.error('Error retrieving localStorage', err);
       }
     }
+    console.info('App ready');
     
-    console.log('App ready');
+    // test
+    img.src = './Low_sun_behind_Halley_VI_modules.jpg';
+    imageModel.setNewPic('./Low_sun_behind_Halley_VI_modules.jpg');
+
+    console.warn('test data:', img);
+
+  }
+
+  var ImageModel = function(canvasWidth, onloadCb) {
+    var defaults = {
+      picData: null,
+      rotation: 0
+    }
+
+    this.canvasWidth = canvasWidth;
+    this.onload = onloadCb;
+
+    this.init = () => {
+      this.data = this.getDefaults();
+    }
+
+    this.getDefaults = () => {
+      var img = new Image();
+      img.onload = this.onload;
+      return Object.assign({}, defaults, {
+        picData: img
+      });      
+    }
+
+    this.reset = () => {
+      this.data = this.getDefaults();
+    }
+
+
+    this._setPicData = (picData) => {
+      this.data.picData.src = picData;
+    }
+
+    this.setNewPic = (picData) => {
+      this.reset();
+      this._setPicData(picData);
+    }
+
+    this.rotate = (degrees) => {
+      this.data.rotation = this.data.rotation + degrees;
+      if (this.data.rotation >= 360) {
+        this.data.rotation = 0;
+      }
+    }
+
+    this._scaleProportionally = (width, height) => {
+      return (this.canvasWidth * height) / width;
+    }
+
+    this.calcSize = () => {
+      var imgWidth = this.data.picData.width;
+      var imgHeight = this.data.picData.height;
+
+      var result = {
+        width: this.canvasWidth,
+        height: this._scaleProportionally(imgWidth, imgHeight)
+      };
+
+      if (90 === this.data.rotation || 270 === this.data.rotation) {
+        var _width = this._scaleProportionally(imgHeight, imgWidth);
+        result.width = this.canvasWidth;
+        result.height = _width;
+      }
+
+      return result;
+    }
+
+    this.getRotation = () => this.data.rotation;
+    this.getPicData = () => this.data.picData;
+
+    this.destroy = () => {
+      this.data = null;
+    }
+
+
+    this.init();
+
+    return this;
   }
 
   var appInstance = new App();
