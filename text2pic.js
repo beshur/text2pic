@@ -175,16 +175,27 @@
           args[4] = imgSize.width;
 
           break;
-
         case 180:
           console.log('drawImage, rotation: %s ', rotation);
+          context.translate(-imgSize.width, -imgSize.height);
+          // x is y
+          args[1] = -padding;
+          // y is x
+          args[2] = -padding;
 
           break;
         case 270:
           console.log('drawImage, rotation: %s ', rotation);
-
+          context.translate(-imgSize.height, 0);
+          // x is y
+          args[1] = -padding;
+          // y is x
+          args[2] = padding;
+          // w is new height
+          args[3] = imgSize.height;
+          // h is new width
+          args[4] = imgSize.width;
           break;
-
         default:
           console.log('drawImage, rotation: default ');
           break;
