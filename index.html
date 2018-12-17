@@ -10,6 +10,7 @@
 <body>
   <div class="text2pic">
     <h2>Текст на картинке</h2>
+    <div class="modern_browser_notice">Для работы вам потребуется современный браузер (<a href="http://outdatedbrowser.com/ru" target="_blank" rel="nofollow">скачать</a>)</div>
     <section class="upload">
       <label class="button">1. Загрузить картинку
         <input type="file" accept="image/*" />
@@ -43,6 +44,19 @@
       <div>Использование возможно с указанием автора (<a href="https://creativecommons.org/licenses/by/4.0/legalcode.ru">CC лицензия</a>)</div>
     </div>
   </div>
+  <script type="text/javascript">
+    (function() {
+      try {
+        var test = () => {
+          document.querySelector(".modern_browser_notice").remove();
+        };
+        test();
+      } catch(err) {
+        // actually not getting here in IE10, because of Syntax Error
+        console.error('Outdated browser, arrow functions fail', err);
+      }
+    })()
+  </script>
   <script src="https://zeptojs.com/zepto.min.js"></script>
   <script src="https://unpkg.com/huebee@1/dist/huebee.pkgd.min.js"></script>
   <script src="text2pic.js?ver=1"></script>

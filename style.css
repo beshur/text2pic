@@ -12,6 +12,14 @@ html {
   box-sizing: border-box;
 }
 
+.modern_browser_notice {
+  padding: 15px;
+  margin-bottom: 20px;
+  color: red;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+}
+
 .text2pic {
   margin: 0 auto;
   padding: 20px;
